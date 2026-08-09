@@ -2,6 +2,43 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 
+// Функция отправки уведомления в Telegram
+async function sendTelegramNotification(order) {
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+    // Если ключей нет (например, забыли добавить), просто пропускаем, чтобы не ломать сервер
+    if (!BOT_TOKEN || !CHAT_ID) {
+        console.log("Telegram токен или Chat ID не настроены в .env!");
+        return;
+    }
+
+    // Формируем красивое сообщение
+    const message = `🚨 **Новый заказ в Voxel Market!**\n\n` +
+        `👤 **Email:** ${order.userEmail}\n` +
+        `📞 **Телефон:** ${order.phone}\n` +
+        `📍 **Адрес:** ${order.address}\n` +
+        `📦 **Товар:** ${order.productName || 'Товар из корзины'}\n` +
+        `💰 **Сумма:** ${order.price} ֏\n` +
+        `🔑 **Код подтверждения:** ${order.code}`;
+
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+    try {
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: CHAT_ID,
+                text: message,
+                parse_mode: 'Markdown' // Чтобы работали жирный шрифт и эмодзи
+            })
+        });
+    } catch (error) {
+        console.error("Ошибка отправки уведомления в Telegram:", error);
+    }
+}
+
 // 1. Создать новый заказ
 router.post('/', async (req, res) => {
     try {
@@ -26,6 +63,10 @@ router.post('/', async (req, res) => {
         });
 
         const savedOrder = await newOrder.save();
+
+        // 🔔 ОТПРАВЛЯЕМ УВЕДОМЛЕНИЕ В TELEGRAM (не блокируя ответ пользователю)
+        sendTelegramNotification(savedOrder);
+
         res.status(201).json(savedOrder);
     } catch (err) {
         console.error("Ошибка при создании заказа:", err);
