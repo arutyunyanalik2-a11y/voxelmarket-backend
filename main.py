@@ -4,19 +4,19 @@ from flask_cors import CORS
 from google import genai
 from dotenv import load_dotenv
 
-# Загружаем переменные из файла .env
+# Загружаем переменные из файла .env (работает локально)
 load_dotenv()
 
 # Инициализируем Flask приложение
 app = Flask(__name__)
 CORS(app)
 
-# Получаем ключ из .env
+# Получаем ключ (на Render он возьмется из панели Environment, локально — из .env)
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    raise ValueError("Не найден GEMINI_API_KEY в файле .env")
+    raise ValueError("Не найден GEMINI_API_KEY! Проверь настройки окружения.")
 
-# Инициализируем новый клиент Google GenAI
+# Инициализируем клиент Google GenAI
 client = genai.Client(api_key=API_KEY)
 
 # Системная инструкция для мини-Захара
@@ -35,7 +35,7 @@ def chat():
         if not user_message:
             return jsonify({"error": "Пустое сообщение"}), 400
 
-        # Запрос через новый клиент с передачей системной инструкции в конфиге
+        # Запрос к актуальной модели Gemini
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=user_message,
@@ -52,7 +52,7 @@ def chat():
         print(f"Ошибка при обработке запроса: {e}")
         return jsonify({"error": "Внутренняя ошибка сервера"}), 500
 
-# Запуск локального сервера
+# Запуск локального сервера (при деплое на Render используется Gunicorn)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
