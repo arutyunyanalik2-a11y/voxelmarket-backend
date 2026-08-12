@@ -5,7 +5,7 @@ require('dotenv').config();
 
 // Подключаем официальный SDK Google GenAI
 const { GoogleGenAI } = require('@google/genai');
-const ai = new GoogleGenAI(); // Автоматически использует process.env.GEMINI_API_KEY
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const authRoutes = require('./routes/auth');
 const productsRoutes = require('./routes/productsRoutes'); // Подключаем маршруты товаров
