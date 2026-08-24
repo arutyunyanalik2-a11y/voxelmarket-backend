@@ -106,8 +106,9 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// 5. НОВОЕ: Изменить статус заказа (для админки)
-router.put('/:id/status', async (req, res) => {
+// 5. ИСПРАВЛЕНО: Изменить статус заказа (для админки)
+// Заменили router.put на router.patch, чтобы совпадало с запросом с фронтенда
+router.patch('/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
         
@@ -119,7 +120,7 @@ router.put('/:id/status', async (req, res) => {
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.id,
             { status },
-            { new: true } // Обязательно, чтобы вернулся уже обновленный документ, а не старый
+            { new: true } // Возвращает уже обновленный документ
         );
 
         if (!updatedOrder) {
