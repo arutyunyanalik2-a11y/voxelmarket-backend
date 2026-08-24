@@ -12,6 +12,8 @@ const orderSchema = new mongoose.Schema({
         required: true 
     }, 
     code: { type: String, required: true },
+    // НОВОЕ ПОЛЕ: статус заказа
+    status: { type: String, default: 'Оформлен' }, 
     createdAt: { type: Date, default: Date.now }
 });
 

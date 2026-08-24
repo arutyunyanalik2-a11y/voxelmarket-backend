@@ -20,7 +20,8 @@ async function sendTelegramNotification(order) {
         `📍 **Адрес:** ${order.address}\n` +
         `📦 **Товар:** ${order.productName || 'Товар из корзины'}\n` +
         `💰 **Сумма:** ${order.price} ֏\n` +
-        `🔑 **Код подтверждения:** ${order.code}`;
+        `🔑 **Код подтверждения:** ${order.code}\n` +
+        `📊 **Статус:** ${order.status}`; // Добавил статус в уведомление
 
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
@@ -60,6 +61,7 @@ router.post('/', async (req, res) => {
             address,
             coordinates,
             code: secureCode
+            // status не передаем, он сам станет "Оформлен" по умолчанию из модели
         });
 
         const savedOrder = await newOrder.save();
@@ -101,6 +103,33 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: "Заказ успешно завершен и удален из базы" });
     } catch (err) {
         res.status(500).json({ message: "Ошибка при удалении заказа", error: err.message });
+    }
+});
+
+// 5. НОВОЕ: Изменить статус заказа (для админки)
+router.put('/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        
+        if (!status) {
+            return res.status(400).json({ message: "Необходимо передать статус" });
+        }
+
+        // Ищем заказ по ID и обновляем ему поле status
+        const updatedOrder = await Order.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true } // Обязательно, чтобы вернулся уже обновленный документ, а не старый
+        );
+
+        if (!updatedOrder) {
+            return res.status(404).json({ message: 'Заказ не найден' });
+        }
+
+        res.json(updatedOrder);
+    } catch (error) {
+        console.error("Ошибка при обновлении статуса:", error);
+        res.status(500).json({ message: 'Ошибка сервера при обновлении статуса' });
     }
 });
 
